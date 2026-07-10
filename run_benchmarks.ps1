@@ -134,14 +134,14 @@ function Measure-ForjaBenchmark {
     # Warmup
     Write-Host "  🏋️  Warmup..." -NoNewline
     for ($i = 0; $i -lt $WarmupIterations; $i++) {
-        $null = Start-Process -FilePath $ForjaRunner -ArgumentList "run", $ScriptPath -NoNewWindow -Wait -RedirectStandardOutput "NUL" -RedirectStandardError "NUL"
+        $null = Start-Process -FilePath $ForjaRunner -ArgumentList "run", $ScriptPath -NoNewWindow -Wait -RedirectStandardOutput "NUL"
     }
     Write-Host " done" -ForegroundColor Green
 
     $times = @()
     for ($i = 0; $i -lt $Iterations; $i++) {
         $ms = Measure-Command {
-            $null = Start-Process -FilePath $ForjaRunner -ArgumentList "run", $ScriptPath -NoNewWindow -Wait -RedirectStandardOutput "NUL" -RedirectStandardError "NUL"
+            $null = Start-Process -FilePath $ForjaRunner -ArgumentList "run", $ScriptPath -NoNewWindow -Wait -RedirectStandardOutput "NUL"
         }
         $times += $ms.TotalMilliseconds
         Write-Host "  ⏱️  Iteración $($i+1): $([math]::Round($ms.TotalMilliseconds, 4)) ms" -ForegroundColor Gray
