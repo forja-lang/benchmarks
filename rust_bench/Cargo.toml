@@ -1,4 +1,4 @@
 [package]
 name = "rust_bench"
-version = "0.7.0"
+version = "0.8.3"
 edition = "2021"

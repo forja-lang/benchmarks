@@ -1,7 +1,7 @@
 # 🏎️ Forja Benchmarks
 
 [![Rust](https://img.shields.io/badge/Rust-1.85%2B-orange?logo=rust)]()
-[![Forja](https://img.shields.io/badge/Forja-0.7.0-blue)]()
+[![Forja](https://img.shields.io/badge/Forja-0.8.3-blue)]()
 [![Python](https://img.shields.io/badge/Python-3.12.10-yellow?logo=python)]()
 [![Windows](https://img.shields.io/badge/Windows-11-blue?logo=windows)]()
 
