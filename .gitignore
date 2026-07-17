@@ -1,2 +1,8 @@
+# ── Ejecutables ──
 *.exe
 *.o
+
+# ── Markdown: solo raíz o README ──
+*.md
+!/*.md
+!README.md
