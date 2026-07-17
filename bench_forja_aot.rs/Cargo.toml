@@ -4,6 +4,6 @@ version = "0.8.3"
 edition = "2021"
 
 # Exportado por Forja (fa) desde bench_forja_aot.fa (podés ejecutar directo con 'forja ejecutar')
-# https://github.com/lococoi/forja
+# https://github.com/forja-lang/forja
 
 [dependencies]
