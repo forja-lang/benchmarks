@@ -4,8 +4,8 @@
 // Ejecuta: cargo run --release --bin bench-jit-100k
 // Requiere: python instalado en PATH
 
-use std::time::Instant;
 use std::process::Command;
+use std::time::Instant;
 
 const ITERS: usize = 1000;
 
@@ -24,11 +24,16 @@ fn main() {
     println!("───────────────────────────────────────────────────────────");
 
     // Rust nativo (baseline) — black_box en contador evita que el optimizador precompute
-    let t_rust = measure_rust(|| {
-        let mut s = 0i64;
-        for j in 0..100000 { s += std::hint::black_box(j); }
-        std::hint::black_box(s);
-    }, ITERS);
+    let t_rust = measure_rust(
+        || {
+            let mut s = 0i64;
+            for j in 0..100000 {
+                s += std::hint::black_box(j);
+            }
+            std::hint::black_box(s);
+        },
+        ITERS,
+    );
 
     // JIT Nativo — mediante NativeJIT directo (bytecode generado manualmente)
     let t_jit = measure_jit_directo(ITERS);
@@ -44,7 +49,10 @@ fn main() {
 
     // Resultados
     println!();
-    println!("  {:<30} {:>12} {:>12}", "Implementación", "μs/iter", "vs Rust");
+    println!(
+        "  {:<30} {:>12} {:>12}",
+        "Implementación", "μs/iter", "vs Rust"
+    );
     println!("  {:─<30} {:─>12} {:─>12}", "", "", "");
     print_row("JIT Nativo (x86-64)", t_jit, t_rust);
     print_row("ForjaFast (VM)", t_fast, t_rust);
@@ -59,22 +67,50 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════");
     println!();
     println!("  suma 0..100000:");
-    println!("    JIT Nativo:     {t_jit:.2} μs  (vs Rust: {ratio_jit:.1}x)", ratio_jit = t_jit / t_rust);
-    println!("    ForjaFast:      {t_fast:.2} μs  (vs Rust: {ratio_fast:.1}x)", ratio_fast = t_fast / t_rust);
-    println!("    Forja VM Orig:  {t_vm:.2} μs  (vs Rust: {ratio_vm:.1}x)", ratio_vm = t_vm / t_rust);
-    println!("    Python:         {t_python:.2} μs  (vs Rust: {ratio_py:.1}x)", ratio_py = t_python / t_rust);
+    println!(
+        "    JIT Nativo:     {t_jit:.2} μs  (vs Rust: {ratio_jit:.1}x)",
+        ratio_jit = t_jit / t_rust
+    );
+    println!(
+        "    ForjaFast:      {t_fast:.2} μs  (vs Rust: {ratio_fast:.1}x)",
+        ratio_fast = t_fast / t_rust
+    );
+    println!(
+        "    Forja VM Orig:  {t_vm:.2} μs  (vs Rust: {ratio_vm:.1}x)",
+        ratio_vm = t_vm / t_rust
+    );
+    println!(
+        "    Python:         {t_python:.2} μs  (vs Rust: {ratio_py:.1}x)",
+        ratio_py = t_python / t_rust
+    );
     println!("    Rust nativo:    {t_rust:.2} μs");
     println!();
     if t_jit < t_fast {
-        println!("  ✅ JIT Nativo es {:.1}x más rápido que ForjaFast!", t_fast / t_jit);
+        println!(
+            "  ✅ JIT Nativo es {:.1}x más rápido que ForjaFast!",
+            t_fast / t_jit
+        );
     } else {
-        println!("  ⚠️ JIT Nativo es {:.1}x más lento que ForjaFast (optimizar)", t_jit / t_fast);
+        println!(
+            "  ⚠️ JIT Nativo es {:.1}x más lento que ForjaFast (optimizar)",
+            t_jit / t_fast
+        );
     }
 }
 
 fn print_row(nombre: &str, us: f64, rust_us: f64) {
     let ratio = us / rust_us;
-    let tag = if ratio < 3.0 { "⚡⚡" } else if ratio < 10.0 { "⚡" } else if ratio < 50.0 { "🔶" } else if ratio < 200.0 { "🐢" } else { "🐌" };
+    let tag = if ratio < 3.0 {
+        "⚡⚡"
+    } else if ratio < 10.0 {
+        "⚡"
+    } else if ratio < 50.0 {
+        "🔶"
+    } else if ratio < 200.0 {
+        "🐢"
+    } else {
+        "🐌"
+    };
     println!("  {nombre:<30} {us:>10.2} us  {ratio:>9.1}x {tag}");
 }
 
@@ -161,7 +197,7 @@ fn measure_jit_directo(iters: usize) -> f64 {
 // ForjaFast (VM optimizada)
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_forja_fast(iters: usize) -> f64 {
-    use forja::bytecode::{BytecodeGenerator, fusionar_opcodes, optimizar_indices};
+    use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator};
     use forja::vm_fast::ForjaFast;
 
     let source = r#"
@@ -230,7 +266,8 @@ mientras (i < 100000) {
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_python(iters: usize) -> f64 {
     // Ejecutar script Python que mide el mismo bucle
-    let script = format!(r#"
+    let script = format!(
+        r#"
 import time
 ITERS = {}
 t = time.perf_counter()
@@ -241,7 +278,9 @@ for _ in range(ITERS):
     _ = s
 t_us = (time.perf_counter() - t) * 1e6 / ITERS
 print(t_us)
-"#, iters);
+"#,
+        iters
+    );
 
     let inicio = Instant::now();
     let output = Command::new("python")
@@ -267,6 +306,8 @@ print(t_us)
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_rust(mut f: impl FnMut(), iters: usize) -> f64 {
     let inicio = Instant::now();
-    for _ in 0..iters { f(); }
+    for _ in 0..iters {
+        f();
+    }
     inicio.elapsed().as_secs_f64() * 1_000_000.0 / iters as f64
 }

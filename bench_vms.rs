@@ -36,8 +36,16 @@ variable r = fib(30)
     println!("  TEST 1: fibonacci(30) — SIN PRINT");
     println!("───────────────────────────────────────────────");
 
-    let t1 = medir(iters, || { let mut v = forja::vm::ForjaVM::new(); v.cargar_bytecode(bc.clone()); v.ejecutar().unwrap(); });
-    let t3 = medir(iters, || { let mut v = forja::vm_jit::ForjaDT::new(); v.cargar_bytecode(forja::vm_jit::compilar_bytecode(&bc)); v.ejecutar().unwrap(); });
+    let t1 = medir(iters, || {
+        let mut v = forja::vm::ForjaVM::new();
+        v.cargar_bytecode(bc.clone());
+        v.ejecutar().unwrap();
+    });
+    let t3 = medir(iters, || {
+        let mut v = forja::vm_jit::ForjaDT::new();
+        v.cargar_bytecode(forja::vm_jit::compilar_bytecode(&bc));
+        v.ejecutar().unwrap();
+    });
 
     print_row("VM Original", t1, t1);
     print_row("VM JIT (Direct Threading)", t3, t1);
@@ -51,8 +59,16 @@ variable r = fib(30)
     println!("  TEST 2: bucle 50000 iters");
     println!("───────────────────────────────────────────────");
 
-    let t1 = medir(iters, || { let mut v = forja::vm::ForjaVM::new(); v.cargar_bytecode(bc2.clone()); v.ejecutar().unwrap(); });
-    let t3 = medir(iters, || { let mut v = forja::vm_jit::ForjaDT::new(); v.cargar_bytecode(forja::vm_jit::compilar_bytecode(&bc2)); v.ejecutar().unwrap(); });
+    let t1 = medir(iters, || {
+        let mut v = forja::vm::ForjaVM::new();
+        v.cargar_bytecode(bc2.clone());
+        v.ejecutar().unwrap();
+    });
+    let t3 = medir(iters, || {
+        let mut v = forja::vm_jit::ForjaDT::new();
+        v.cargar_bytecode(forja::vm_jit::compilar_bytecode(&bc2));
+        v.ejecutar().unwrap();
+    });
 
     print_row("VM Original", t1, t1);
     print_row("VM JIT (DT)", t3, t1);
@@ -65,8 +81,14 @@ variable r = fib(30)
     println!("  Python fib(30):   ~200 μs/iter");
     println!("  Python bucle 50k: ~3000 μs/iter");
     println!();
-    println!("  Forja JIT fib(30)  vs Python: {:.1}x más rápido", 200.0 / t3);
-    println!("  Forja JIT bucle 50k vs Python: {:.1}x más rápido", 3000.0 / t3);
+    println!(
+        "  Forja JIT fib(30)  vs Python: {:.1}x más rápido",
+        200.0 / t3
+    );
+    println!(
+        "  Forja JIT bucle 50k vs Python: {:.1}x más rápido",
+        3000.0 / t3
+    );
 }
 
 fn compilar(source: &str) -> Vec<forja::bytecode::Opcode> {
@@ -80,12 +102,25 @@ fn compilar(source: &str) -> Vec<forja::bytecode::Opcode> {
 
 fn medir(iters: usize, mut f: impl FnMut()) -> f64 {
     let inicio = Instant::now();
-    for _ in 0..iters { f(); }
+    for _ in 0..iters {
+        f();
+    }
     inicio.elapsed().as_secs_f64() * 1_000_000.0 / iters as f64
 }
 
 fn print_row(nombre: &str, us: f64, baseline: f64) {
     let ratio = baseline / us;
-    let stars = if ratio >= 2.0 { " ⭐" } else if ratio >= 1.5 { " ★" } else if ratio >= 1.1 { " ✓" } else { "" };
-    println!("  {:<30} {:>8.2} μs/iter  ({:.2}x){}", nombre, us, ratio, stars);
+    let stars = if ratio >= 2.0 {
+        " ⭐"
+    } else if ratio >= 1.5 {
+        " ★"
+    } else if ratio >= 1.1 {
+        " ✓"
+    } else {
+        ""
+    };
+    println!(
+        "  {:<30} {:>8.2} μs/iter  ({:.2}x){}",
+        nombre, us, ratio, stars
+    );
 }

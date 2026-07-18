@@ -3,7 +3,7 @@
 //
 // Uso: rustc -O bench_fa.rs -o bench_fa.exe && ./bench_fa.exe
 
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 fn main() {
     println!("═══════════════════════════════════════════════════");
@@ -67,7 +67,9 @@ fn main() {
     let inicio = Instant::now();
     for _ in 0..iters {
         let mut s: i64 = 0;
-        for i in 1..=100000 { s += i; }
+        for i in 1..=100000 {
+            s += i;
+        }
         std::hint::black_box(s);
     }
     let tiempo_rust = inicio.elapsed();
@@ -76,7 +78,10 @@ fn main() {
     for _ in 0..iters {
         let mut s: i64 = 0;
         let mut i: i64 = 1;
-        while i <= 100000 { s += i; i += 1; }
+        while i <= 100000 {
+            s += i;
+            i += 1;
+        }
         std::hint::black_box(s);
     }
     let tiempo_forja = inicio.elapsed();
@@ -94,7 +99,9 @@ fn main() {
     let inicio = Instant::now();
     for _ in 0..iters {
         let mut r: i64 = 0;
-        for i in 0..100000 { r = suma_rust(r, i); }
+        for i in 0..100000 {
+            r = suma_rust(r, i);
+        }
         std::hint::black_box(r);
     }
     let tiempo_rust = inicio.elapsed();
@@ -103,7 +110,10 @@ fn main() {
     for _ in 0..iters {
         let mut r: i64 = 0;
         let mut i: i64 = 0;
-        while i < 100000 { r = suma_forja(r, i); i += 1; }
+        while i < 100000 {
+            r = suma_forja(r, i);
+            i += 1;
+        }
         std::hint::black_box(r);
     }
     let tiempo_forja = inicio.elapsed();
@@ -122,7 +132,9 @@ fn main() {
     let inicio = Instant::now();
     for _ in 0..iters2 {
         let mut s = String::new();
-        for i in 0..100 { s.push_str(&i.to_string()); }
+        for i in 0..100 {
+            s.push_str(&i.to_string());
+        }
         std::hint::black_box(s.len());
     }
     let tiempo_rust = inicio.elapsed();
@@ -131,7 +143,10 @@ fn main() {
     for _ in 0..iters2 {
         let mut s = String::new();
         let mut i = 0;
-        while i < 100 { s.push_str(&i.to_string()); i += 1; }
+        while i < 100 {
+            s.push_str(&i.to_string());
+            i += 1;
+        }
         std::hint::black_box(s.len());
     }
     let tiempo_forja = inicio.elapsed();
@@ -157,7 +172,9 @@ fn main() {
 // ===== Implementaciones Rust nativas =====
 
 fn fibonacci_rust(n: i64) -> i64 {
-    if n <= 1 { return n; }
+    if n <= 1 {
+        return n;
+    }
     let (mut a, mut b) = (0, 1);
     for _ in 2..=n {
         let temp = a + b;
@@ -168,10 +185,16 @@ fn fibonacci_rust(n: i64) -> i64 {
 }
 
 fn fibonacci_rec_rust(n: i64) -> i64 {
-    if n <= 1 { n } else { fibonacci_rec_rust(n - 1) + fibonacci_rec_rust(n - 2) }
+    if n <= 1 {
+        n
+    } else {
+        fibonacci_rec_rust(n - 1) + fibonacci_rec_rust(n - 2)
+    }
 }
 
-fn suma_rust(a: i64, b: i64) -> i64 { a + b }
+fn suma_rust(a: i64, b: i64) -> i64 {
+    a + b
+}
 
 // ===== Implementaciones Forja-equivalentes (simulan la VM) =====
 // Usan el mismo algoritmo pero en Rust, para medir la diferencia
@@ -179,7 +202,9 @@ fn suma_rust(a: i64, b: i64) -> i64 { a + b }
 
 fn fibonacci_forja(n: i64) -> i64 {
     // Simula bytecode: Push, Store, Load, Add, Jump, etc.
-    if n <= 1 { return n; }
+    if n <= 1 {
+        return n;
+    }
     let mut a: i64 = 0;
     let mut b: i64 = 1;
     let mut i: i64 = 2;
@@ -194,7 +219,9 @@ fn fibonacci_forja(n: i64) -> i64 {
 
 fn fibonacci_rec_forja(n: i64) -> i64 {
     // Simula call/return de la VM
-    if n <= 1 { return n; }
+    if n <= 1 {
+        return n;
+    }
     fibonacci_rec_forja(n - 1) + fibonacci_rec_forja(n - 2)
 }
 
@@ -210,16 +237,32 @@ fn imprimir_resultado(nombre: &str, tiempo: Duration, iters: usize) {
     let por_iter = total_us / iters as f64;
     println!(
         "  {:<30} {:>8.2} μs/iter  (total: {:>8.2} ms en {} iters)",
-        nombre, por_iter, total_us / 1000.0, iters
+        nombre,
+        por_iter,
+        total_us / 1000.0,
+        iters
     );
 }
 
 fn imprimir_ratio(forja: Duration, rust: Duration) {
     let ratio = forja.as_secs_f64() / rust.as_secs_f64();
-    let emoji = if ratio < 5.0 { "⚡" } else if ratio < 20.0 { "🔶" } else { "🐢" };
+    let emoji = if ratio < 5.0 {
+        "⚡"
+    } else if ratio < 20.0 {
+        "🔶"
+    } else {
+        "🐢"
+    };
     println!(
         "  {} Forja VM es {:.2}x más lento que Rust nativo{}",
-        emoji, ratio,
-        if ratio < 5.0 { " (excelente!)" } else if ratio < 20.0 { " (aceptable)" } else { " (esperado para VM interpretada)" }
+        emoji,
+        ratio,
+        if ratio < 5.0 {
+            " (excelente!)"
+        } else if ratio < 20.0 {
+            " (aceptable)"
+        } else {
+            " (esperado para VM interpretada)"
+        }
     );
 }

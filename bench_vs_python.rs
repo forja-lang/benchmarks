@@ -7,8 +7,8 @@
 //   ForjaFast  — forja::ejecutar() (VM original optimizada)
 //   Forja JIT  — forja::ejecutar_jit() (JIT Orchestrator con fallback)
 
-use std::time::Instant;
 use std::io::Write;
+use std::time::Instant;
 
 fn main() {
     let sep70 = "=".repeat(70);
@@ -21,13 +21,13 @@ fn main() {
 
     // (nombre, codigo_forja, iteraciones)
     let tests: Vec<(&str, &str, usize)> = vec![
-        ("fib(30)",             FIB_30,        5),
-        ("fib(35)",             FIB_35,        3),
-        ("suma_bucle(1M)",      SUMA_1M,       10),
-        ("suma_bucle(10M)",     SUMA_10M,      5),
-        ("float_bucle(1M)",     FLOAT_1M,      10),
-        ("nested_bucle(1000)",  NESTED_1000,   20),
-        ("nested_bucle(5000)",  NESTED_5000,   10),
+        ("fib(30)", FIB_30, 5),
+        ("fib(35)", FIB_35, 3),
+        ("suma_bucle(1M)", SUMA_1M, 10),
+        ("suma_bucle(10M)", SUMA_10M, 5),
+        ("float_bucle(1M)", FLOAT_1M, 10),
+        ("nested_bucle(1000)", NESTED_1000, 20),
+        ("nested_bucle(5000)", NESTED_5000, 10),
     ];
 
     let mut resultados: Vec<(String, f64, f64, String, String)> = Vec::new();
@@ -65,7 +65,10 @@ fn main() {
     println!("{}", sep90);
     println!("  TABLA COMPARATIVA — ForjaFast vs Forja JIT");
     println!("{}", sep90);
-    println!("  {:<30} {:>15} {:>15} {:>15}", "Test", "ForjaFast", "Forja JIT", "JIT vs Fast");
+    println!(
+        "  {:<30} {:>15} {:>15} {:>15}",
+        "Test", "ForjaFast", "Forja JIT", "JIT vs Fast"
+    );
     println!("  {:─<30} {:─>15} {:─>15} {:─>15}", "", "", "", "");
     for (nombre, avg_fast, avg_jit, s_fast, s_jit) in &resultados {
         let ratio = if *avg_jit > 0.0 && *avg_fast > 0.0 {
@@ -73,7 +76,10 @@ fn main() {
         } else {
             "N/A".to_string()
         };
-        println!("  {:<30} {:>15} {:>15} {:>15}", nombre, s_fast, s_jit, ratio);
+        println!(
+            "  {:<30} {:>15} {:>15} {:>15}",
+            nombre, s_fast, s_jit, ratio
+        );
     }
     println!();
 

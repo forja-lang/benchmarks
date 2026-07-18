@@ -86,18 +86,36 @@ escribir(fibonacci(20))
     println!("───────────────────────────────────────────────────");
     println!("  📊 Comparación directa");
     println!("───────────────────────────────────────────────────");
-    println!("  Forja VM (bytecode): {:>10.2} μs/iter  (total {:>8.2} ms)",
-        forja_us, tiempo_forja_vm.as_secs_f64() * 1000.0);
-    println!("  Rust nativo:         {:>10.2} μs/iter  (total {:>8.2} ms)",
-        rust_us, tiempo_rust.as_secs_f64() * 1000.0);
+    println!(
+        "  Forja VM (bytecode): {:>10.2} μs/iter  (total {:>8.2} ms)",
+        forja_us,
+        tiempo_forja_vm.as_secs_f64() * 1000.0
+    );
+    println!(
+        "  Rust nativo:         {:>10.2} μs/iter  (total {:>8.2} ms)",
+        rust_us,
+        tiempo_rust.as_secs_f64() * 1000.0
+    );
 
     let ratio = forja_us / rust_us;
-    let emoji = if ratio < 5.0 { "⚡" } else if ratio < 20.0 { "🔶" } else { "🐢" };
-    println!("  {} Forja VM es {:.2}x más lento que Rust nativo{}",
-        emoji, ratio,
-        if ratio < 5.0 { " — IMPRESIONANTE!" }
-        else if ratio < 20.0 { " — aceptable para VM interpretada" }
-        else { " — esperado, es una VM sin JIT" }
+    let emoji = if ratio < 5.0 {
+        "⚡"
+    } else if ratio < 20.0 {
+        "🔶"
+    } else {
+        "🐢"
+    };
+    println!(
+        "  {} Forja VM es {:.2}x más lento que Rust nativo{}",
+        emoji,
+        ratio,
+        if ratio < 5.0 {
+            " — IMPRESIONANTE!"
+        } else if ratio < 20.0 {
+            " — aceptable para VM interpretada"
+        } else {
+            " — esperado, es una VM sin JIT"
+        }
     );
 
     // ============================================================
@@ -151,7 +169,9 @@ escribir(suma)
             suma += j;
             j += 1;
         }
-        if i == 0 { println!("  Resultado: {}", suma); }
+        if i == 0 {
+            println!("  Resultado: {}", suma);
+        }
         std::hint::black_box(suma);
     }
     let t_rust = inicio.elapsed();
@@ -161,18 +181,36 @@ escribir(suma)
     println!("───────────────────────────────────────────────────");
     println!("  📊 Comparación directa (bucle)");
     println!("───────────────────────────────────────────────────");
-    println!("  Forja VM (bytecode): {:>10.2} μs/iter  (total {:>8.2} ms)",
-        forja_us2, t_forja.as_secs_f64() * 1000.0);
-    println!("  Rust nativo:         {:>10.2} μs/iter  (total {:>8.2} ms)",
-        rust_us2, t_rust.as_secs_f64() * 1000.0);
+    println!(
+        "  Forja VM (bytecode): {:>10.2} μs/iter  (total {:>8.2} ms)",
+        forja_us2,
+        t_forja.as_secs_f64() * 1000.0
+    );
+    println!(
+        "  Rust nativo:         {:>10.2} μs/iter  (total {:>8.2} ms)",
+        rust_us2,
+        t_rust.as_secs_f64() * 1000.0
+    );
 
     let ratio2 = forja_us2 / rust_us2;
-    let emoji2 = if ratio2 < 5.0 { "⚡" } else if ratio2 < 20.0 { "🔶" } else { "🐢" };
-    println!("  {} Forja VM es {:.2}x más lento que Rust nativo{}",
-        emoji2, ratio2,
-        if ratio2 < 5.0 { " — IMPRESIONANTE!" }
-        else if ratio2 < 20.0 { " — aceptable para VM interpretada" }
-        else { " — esperado, es una VM sin JIT" }
+    let emoji2 = if ratio2 < 5.0 {
+        "⚡"
+    } else if ratio2 < 20.0 {
+        "🔶"
+    } else {
+        "🐢"
+    };
+    println!(
+        "  {} Forja VM es {:.2}x más lento que Rust nativo{}",
+        emoji2,
+        ratio2,
+        if ratio2 < 5.0 {
+            " — IMPRESIONANTE!"
+        } else if ratio2 < 20.0 {
+            " — aceptable para VM interpretada"
+        } else {
+            " — esperado, es una VM sin JIT"
+        }
     );
 
     // ============================================================
@@ -191,7 +229,9 @@ escribir(suma)
 }
 
 fn fib_rust(n: i64) -> i64 {
-    if n <= 1 { return n; }
+    if n <= 1 {
+        return n;
+    }
     let (mut a, mut b) = (0, 1);
     for _ in 2..=n {
         let temp = a + b;

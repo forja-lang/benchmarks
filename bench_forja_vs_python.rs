@@ -25,7 +25,9 @@ fn main() {
     let inicio = Instant::now();
     for i in 0..iters {
         let r = fib_rust(30);
-        if i == 0 { println!("  Rust:       {}", r); }
+        if i == 0 {
+            println!("  Rust:       {}", r);
+        }
         std::hint::black_box(r);
     }
     let t_rust = duracion(iters, inicio.elapsed());
@@ -48,8 +50,12 @@ fn main() {
     let inicio = Instant::now();
     for i in 0..iters {
         let mut s = 0i64;
-        for j in 0..100000 { s += j; }
-        if i == 0 { println!("  Rust:       {}", s); }
+        for j in 0..100000 {
+            s += j;
+        }
+        if i == 0 {
+            println!("  Rust:       {}", s);
+        }
         std::hint::black_box(s);
     }
     let t_rust = duracion(iters, inicio.elapsed());
@@ -70,7 +76,9 @@ fn main() {
     let inicio = Instant::now();
     for i in 0..iters {
         let r = fib_rec_rust(15);
-        if i == 0 { println!("  Rust:       {}", r); }
+        if i == 0 {
+            println!("  Rust:       {}", r);
+        }
         std::hint::black_box(r);
     }
     let t_rust = duracion(iters, inicio.elapsed());
@@ -147,14 +155,24 @@ fn forja_vm_bench(_name: &str, source: &str, iters: usize) -> f64 {
 // ============================================================
 
 fn fib_rust(n: i64) -> i64 {
-    if n <= 1 { return n; }
+    if n <= 1 {
+        return n;
+    }
     let (mut a, mut b) = (0, 1);
-    for _ in 2..=n { let t = a + b; a = b; b = t; }
+    for _ in 2..=n {
+        let t = a + b;
+        a = b;
+        b = t;
+    }
     b
 }
 
 fn fib_rec_rust(n: i64) -> i64 {
-    if n <= 1 { n } else { fib_rec_rust(n-1) + fib_rec_rust(n-2) }
+    if n <= 1 {
+        n
+    } else {
+        fib_rec_rust(n - 1) + fib_rec_rust(n - 2)
+    }
 }
 
 // ============================================================

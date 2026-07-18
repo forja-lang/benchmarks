@@ -56,7 +56,9 @@ fn medir_fast(source: &str, iters: usize) -> Result<f64, String> {
     // ForjaFast requiere bytecode con indices (optimizar_indices)
     // pero optimizar_indices es incompatible con funciones
     let bc_raw = compilar_raw(source);
-    let has_functions = bc_raw.iter().any(|op| matches!(op, forja::bytecode::Opcode::FunctionDef(_, _)));
+    let has_functions = bc_raw
+        .iter()
+        .any(|op| matches!(op, forja::bytecode::Opcode::FunctionDef(_, _)));
     if has_functions {
         return Err("N/A (incompatible con funciones)".into());
     }
@@ -223,25 +225,32 @@ fn main() {
     println!("  📊 TABLA RESUMEN — us/iter");
     println!("══════════════════════════════════════════════════════════════════");
     println!();
-    println!("  {:<35} {:>12} {:>12} {:>12}",
-        "Benchmark", "ForjaVM", "ForjaFast", "ForjaDT");
+    println!(
+        "  {:<35} {:>12} {:>12} {:>12}",
+        "Benchmark", "ForjaVM", "ForjaFast", "ForjaDT"
+    );
     println!("  {:─<35} {:─>12} {:─>12}", "", "", "");
 
     let rows: [(&str, f64, f64, f64); 7] = [
         ("A) Suma enteros 100k", a.0, a.1, a.2),
         ("B) Suma floats 100k", b.0, b.1, b.2),
-        ("C) Suma simple 50k",  c.0, c.1, c.2),
-        ("D) Llamadas fn 50k",  d.0, d.1, d.2),
-        ("E) Strings 1k",       e.0, e.1, e.2),
-        ("F) Fibonacci(30)",    f.0, f.1, f.2),
-        ("G) Bucle suma 50k",   g.0, g.1, g.2),
+        ("C) Suma simple 50k", c.0, c.1, c.2),
+        ("D) Llamadas fn 50k", d.0, d.1, d.2),
+        ("E) Strings 1k", e.0, e.1, e.2),
+        ("F) Fibonacci(30)", f.0, f.1, f.2),
+        ("G) Bucle suma 50k", g.0, g.1, g.2),
     ];
 
     for &(name, vm, fast, dt) in &rows {
-        let fast_s = if fast.is_infinite() { "     N/A".to_string() }
-                     else { format!("{:>10.2}us", fast) };
-        println!("  {:<35} {:>10.2}us {:>12} {:>10.2}us",
-            name, vm, fast_s, dt);
+        let fast_s = if fast.is_infinite() {
+            "     N/A".to_string()
+        } else {
+            format!("{:>10.2}us", fast)
+        };
+        println!(
+            "  {:<35} {:>10.2}us {:>12} {:>10.2}us",
+            name, vm, fast_s, dt
+        );
     }
 
     // ═══ SPEEDUPS ═══════════════════════════════════════
@@ -250,22 +259,31 @@ fn main() {
     println!("  📊 SPEEDUP vs ForjaVM (linea base) — mas alto = mejor");
     println!("══════════════════════════════════════════════════════════════════");
     println!();
-    println!("  {:<35} {:>12} {:>12}",
-        "Benchmark", "ForjaFast", "ForjaDT");
+    println!(
+        "  {:<35} {:>12} {:>12}",
+        "Benchmark", "ForjaFast", "ForjaDT"
+    );
     println!("  {:─<35} {:─>12} {:─>12}", "", "", "");
 
     for &(name, vm, fast, dt) in &rows {
-        let sf = if vm > 0.0 && !fast.is_infinite() && fast > 0.0 { vm / fast } else { 0.0 };
+        let sf = if vm > 0.0 && !fast.is_infinite() && fast > 0.0 {
+            vm / fast
+        } else {
+            0.0
+        };
         let sd = if vm > 0.0 && dt > 0.0 { vm / dt } else { 0.0 };
-        let fast_s = if fast.is_infinite() { "     N/A".to_string() }
-                     else { format!("{:>10.2}x", sf) };
-        println!("  {:<35} {:>12} {:>10.2}x",
-            name, fast_s, sd);
+        let fast_s = if fast.is_infinite() {
+            "     N/A".to_string()
+        } else {
+            format!("{:>10.2}x", sf)
+        };
+        println!("  {:<35} {:>12} {:>10.2}x", name, fast_s, sd);
     }
 
     println!();
     println!("══════════════════════════════════════════════════════════════════");
-    println!("  🏆 GANADOR: ForjaFast ({:.1}x-{:.1}x mas rapido que ForjaVM)",
+    println!(
+        "  🏆 GANADOR: ForjaFast ({:.1}x-{:.1}x mas rapido que ForjaVM)",
         rows.iter()
             .filter(|(_, _, f, _)| !f.is_infinite() && *f > 0.0)
             .map(|(_, vm, fast, _)| vm / fast)
@@ -280,6 +298,19 @@ fn main() {
 
 fn print_vm(nombre: &str, us: f64, baseline: f64) {
     let ratio = if baseline > 0.0 { baseline / us } else { 1.0 };
-    let tag = if ratio >= 2.0 { " ⭐" } else if ratio >= 1.5 { " ★" } else if ratio >= 1.1 { " ✓" } else if ratio >= 0.9 { "" } else { " 🐢" };
-    println!("  {:<30} {:>8.2} us/iter  ({:.2}x){}", nombre, us, ratio, tag);
+    let tag = if ratio >= 2.0 {
+        " ⭐"
+    } else if ratio >= 1.5 {
+        " ★"
+    } else if ratio >= 1.1 {
+        " ✓"
+    } else if ratio >= 0.9 {
+        ""
+    } else {
+        " 🐢"
+    };
+    println!(
+        "  {:<30} {:>8.2} us/iter  ({:.2}x){}",
+        nombre, us, ratio, tag
+    );
 }

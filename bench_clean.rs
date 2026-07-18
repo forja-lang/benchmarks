@@ -9,9 +9,14 @@
 //   - Tail call elimination
 //   - Opcode fusion (DeclareEnteroOp, etc.)
 
-use std::time::Instant;
+use forja::{
+    bytecode,
+    bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator},
+    lexer, parser,
+    vm_fast::ForjaFast,
+};
 use std::process::Command;
-use forja::{bytecode, bytecode::{optimizar_indices, fusionar_opcodes, BytecodeGenerator}, lexer, parser, vm_fast::ForjaFast};
+use std::time::Instant;
 
 fn compilar(source: &str) -> Vec<bytecode::Opcode> {
     let bc_raw = {
@@ -32,7 +37,11 @@ fn ejecutar_con_verificacion(bc: &[bytecode::Opcode], esperado: &str) {
     vm.ejecutar().unwrap();
     let out = vm.obtener_output().to_vec();
     assert!(!out.is_empty(), "sin output");
-    assert_eq!(out[0], esperado, "esperado '{}', obtuve '{}'", esperado, out[0]);
+    assert_eq!(
+        out[0], esperado,
+        "esperado '{}', obtuve '{}'",
+        esperado, out[0]
+    );
 }
 
 fn main() {
@@ -100,10 +109,16 @@ fn main() {
 
     println!();
     println!("═══════════════════════════════════════════════════════");
-    println!("  🔥 Forja VM vs Python — Benchmark FINAL ({} iters)", iters);
+    println!(
+        "  🔥 Forja VM vs Python — Benchmark FINAL ({} iters)",
+        iters
+    );
     println!("═══════════════════════════════════════════════════════");
     println!();
-    println!("  {:<22} {:>14} {:>12} {:>6}  {}", "TEST", "Forja VM (μs)", "Python (μs)", "Ratio", "Winner");
+    println!(
+        "  {:<22} {:>14} {:>12} {:>6}  {}",
+        "TEST", "Forja VM (μs)", "Python (μs)", "Ratio", "Winner"
+    );
     println!("  ──────────────────────────────────────────────────────────────");
 
     let mut total_forja = 0.0_f64;
@@ -115,17 +130,31 @@ fn main() {
         let ratio = if p_us > 0.0 { f_us / p_us } else { 0.0 };
         let winner = if f_us < p_us { "⚡" } else { "🐍" };
 
-        println!("  {:<22} {:>12.2} {:>12.2} {:>5.2}x  {}", nombres[i], f_us, p_us, ratio, winner);
+        println!(
+            "  {:<22} {:>12.2} {:>12.2} {:>5.2}x  {}",
+            nombres[i], f_us, p_us, ratio, winner
+        );
 
         total_forja += f_us;
         total_python += p_us;
     }
 
-    let total_ratio = if total_python > 0.0 { total_forja / total_python } else { 0.0 };
-    let total_winner = if total_forja < total_python { "⚡ Forja VM" } else { "🐍 Python" };
+    let total_ratio = if total_python > 0.0 {
+        total_forja / total_python
+    } else {
+        0.0
+    };
+    let total_winner = if total_forja < total_python {
+        "⚡ Forja VM"
+    } else {
+        "🐍 Python"
+    };
 
     println!("  ──────────────────────────────────────────────────────────────");
-    println!("  {:<22} {:>12.2} {:>12.2} {:>5.2}x", "TOTAL", total_forja, total_python, total_ratio);
+    println!(
+        "  {:<22} {:>12.2} {:>12.2} {:>5.2}x",
+        "TOTAL", total_forja, total_python, total_ratio
+    );
     println!();
     println!("  🏆 GANADOR: {}", total_winner);
     println!("═══════════════════════════════════════════════════════");
@@ -140,7 +169,8 @@ fn parse_python_times(output: &str) -> Vec<f64> {
         if line.is_empty() || line.starts_with("PYTHON") {
             continue;
         }
-        if let Some(us_str) = line.split_whitespace()
+        if let Some(us_str) = line
+            .split_whitespace()
             .find(|s| s.ends_with("us") || s.contains('.'))
         {
             let cleaned = us_str.trim_end_matches("us");
@@ -151,7 +181,9 @@ fn parse_python_times(output: &str) -> Vec<f64> {
     }
     if times.len() < 5 {
         eprintln!("⚠️  Solo se parsearon {}/5 tiempos de Python", times.len());
-        while times.len() < 5 { times.push(0.0); }
+        while times.len() < 5 {
+            times.push(0.0);
+        }
     }
     times[..5].to_vec()
 }

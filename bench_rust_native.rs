@@ -1,10 +1,12 @@
-use std::time::Instant;
 use std::hint::black_box;
+use std::time::Instant;
 
 #[inline(never)]
 fn fib(n: u64) -> u64 {
-    if n <= 1 { return n; }
-    fib(n-1) + fib(n-2)
+    if n <= 1 {
+        return n;
+    }
+    fib(n - 1) + fib(n - 2)
 }
 
 #[inline(never)]
@@ -40,23 +42,35 @@ fn main() {
     let start = Instant::now();
     let result = suma_bucle(1_000_000);
     let elapsed = start.elapsed();
-    println!("{:<35}: {:>8.2?}  result={}", "suma_bucle(1M)", elapsed, result);
+    println!(
+        "{:<35}: {:>8.2?}  result={}",
+        "suma_bucle(1M)", elapsed, result
+    );
 
     // suma_bucle(10M)
     let start = Instant::now();
     let result = suma_bucle(10_000_000);
     let elapsed = start.elapsed();
-    println!("{:<35}: {:>8.2?}  result={}", "suma_bucle(10M)", elapsed, result);
+    println!(
+        "{:<35}: {:>8.2?}  result={}",
+        "suma_bucle(10M)", elapsed, result
+    );
 
     // nested_bucle(1000)
     let start = Instant::now();
     let result = nested_bucle(1000);
     let elapsed = start.elapsed();
-    println!("{:<35}: {:>8.2?}  result={}", "nested_bucle(1000)", elapsed, result);
+    println!(
+        "{:<35}: {:>8.2?}  result={}",
+        "nested_bucle(1000)", elapsed, result
+    );
 
     // nested_bucle(5000)
     let start = Instant::now();
     let result = nested_bucle(5000);
     let elapsed = start.elapsed();
-    println!("{:<35}: {:>8.2?}  result={}", "nested_bucle(5000)", elapsed, result);
+    println!(
+        "{:<35}: {:>8.2?}  result={}",
+        "nested_bucle(5000)", elapsed, result
+    );
 }

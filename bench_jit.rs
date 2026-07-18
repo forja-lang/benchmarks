@@ -39,10 +39,18 @@ escribir(fib(30))
 
     let t_fast = measure_forja_fast(codigo, iters);
     let t_vm = measure_forja_vm(codigo, iters);
-    let t_rust = measure_rust(|| { std::hint::black_box(fib_rust(30)); }, iters);
+    let t_rust = measure_rust(
+        || {
+            std::hint::black_box(fib_rust(30));
+        },
+        iters,
+    );
 
     println!();
-    println!("  {:<28} {:>10} {:>10}", "Implementacion", "μs/iter", "vs Rust");
+    println!(
+        "  {:<28} {:>10} {:>10}",
+        "Implementacion", "μs/iter", "vs Rust"
+    );
     println!("  {:─<28} {:─>10} {:─>10}", "", "", "");
     print_row("ForjaFast (vm_fast)", t_fast, t_rust);
     print_row("Forja VM Original", t_vm, t_rust);
@@ -68,14 +76,22 @@ escribir(s)
 
     let t_fast2 = measure_forja_fast(codigo2, iters);
     let t_vm2 = measure_forja_vm(codigo2, iters);
-    let t_rust2 = measure_rust(|| {
-        let mut s = 0i64;
-        for j in 0..100000 { s += j; }
-        std::hint::black_box(s);
-    }, iters);
+    let t_rust2 = measure_rust(
+        || {
+            let mut s = 0i64;
+            for j in 0..100000 {
+                s += j;
+            }
+            std::hint::black_box(s);
+        },
+        iters,
+    );
 
     println!();
-    println!("  {:<28} {:>10} {:>10}", "Implementacion", "μs/iter", "vs Rust");
+    println!(
+        "  {:<28} {:>10} {:>10}",
+        "Implementacion", "μs/iter", "vs Rust"
+    );
     println!("  {:─<28} {:─>10} {:─>10}", "", "", "");
     print_row("ForjaFast (vm_fast)", t_fast2, t_rust2);
     print_row("Forja VM Original", t_vm2, t_rust2);
@@ -90,13 +106,25 @@ escribir(s)
     println!("═══════════════════════════════════════════════════════════════");
     println!();
     println!("  fib(30):");
-    println!("    ForjaFast  {t_fast:.2} μs  (vs Rust: {:.0}x)", t_fast / t_rust);
-    println!("    VM Orig    {t_vm:.2} μs  (vs Rust: {:.0}x)", t_vm / t_rust);
+    println!(
+        "    ForjaFast  {t_fast:.2} μs  (vs Rust: {:.0}x)",
+        t_fast / t_rust
+    );
+    println!(
+        "    VM Orig    {t_vm:.2} μs  (vs Rust: {:.0}x)",
+        t_vm / t_rust
+    );
     println!("    Rust        {t_rust:.2} μs");
     println!();
     println!("  suma 100k:");
-    println!("    ForjaFast  {t_fast2:.2} μs  (vs Rust: {:.0}x)", t_fast2 / t_rust2);
-    println!("    VM Orig    {t_vm2:.2} μs  (vs Rust: {:.0}x)", t_vm2 / t_rust2);
+    println!(
+        "    ForjaFast  {t_fast2:.2} μs  (vs Rust: {:.0}x)",
+        t_fast2 / t_rust2
+    );
+    println!(
+        "    VM Orig    {t_vm2:.2} μs  (vs Rust: {:.0}x)",
+        t_vm2 / t_rust2
+    );
     println!("    Rust        {t_rust2:.2} μs");
     println!();
     println!("═══ JIT Nativo ═══");
@@ -109,12 +137,20 @@ escribir(s)
 
 fn print_row(nombre: &str, us: f64, rust_us: f64) {
     let ratio = us / rust_us;
-    let tag = if ratio < 5.0 { "⚡⚡" } else if ratio < 50.0 { "⚡" } else if ratio < 500.0 { "🔶" } else { "🐢" };
+    let tag = if ratio < 5.0 {
+        "⚡⚡"
+    } else if ratio < 50.0 {
+        "⚡"
+    } else if ratio < 500.0 {
+        "🔶"
+    } else {
+        "🐢"
+    };
     println!("  {nombre:<28} {us:>8.2} us  {ratio:>7.0}x {tag}");
 }
 
 fn measure_forja_fast(source: &str, iters: usize) -> f64 {
-    use forja::bytecode::{BytecodeGenerator, fusionar_opcodes, optimizar_indices};
+    use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator};
     use forja::vm_fast::ForjaFast;
 
     let mut gen = BytecodeGenerator::new();
@@ -159,13 +195,21 @@ fn measure_forja_vm(source: &str, iters: usize) -> f64 {
 
 fn measure_rust(mut f: impl FnMut(), iters: usize) -> f64 {
     let inicio = Instant::now();
-    for _ in 0..iters { f(); }
+    for _ in 0..iters {
+        f();
+    }
     inicio.elapsed().as_secs_f64() * 1_000_000.0 / iters as f64
 }
 
 fn fib_rust(n: i64) -> i64 {
-    if n <= 1 { return n; }
+    if n <= 1 {
+        return n;
+    }
     let (mut a, mut b) = (0, 1);
-    for _ in 2..=n { let t = a + b; a = b; b = t; }
+    for _ in 2..=n {
+        let t = a + b;
+        a = b;
+        b = t;
+    }
     b
 }
