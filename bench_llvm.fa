@@ -1,5 +1,5 @@
 // Benchmark LLVM Backend — Mide rendimiento de transpilación vs LLVM vs ASM
-importar "std/io"
+importar std/io
 
 funcion fibonacci(n) {
     si (n <= 1) { retornar n }

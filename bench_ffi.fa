@@ -1,5 +1,5 @@
 // Benchmark FFI — Mide rendimiento de llamadas a funciones externas
-importar "std/io"
+importar std/io
 
 // Llamada FFI a función del sistema
 externa funcion strlen(s: Texto) -> Entero

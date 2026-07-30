@@ -1,5 +1,5 @@
 // Benchmark de Concurrencia — Mide speedup con hilos/canales
-importar "std/io"
+importar std/io
 
 funcion trabajo_pesado(n) {
     variable suma = 0
