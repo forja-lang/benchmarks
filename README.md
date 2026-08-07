@@ -115,3 +115,43 @@ cd benchmarks/bench_forja_aot.rs && cargo run --release
 # Forja AOT heavy
 cd benchmarks/bench_forja_heavy.rs && cargo run --release
 ```
+
+---
+
+## 📈 Benchmarks estadísticos con Criterion
+
+El benchmark `bench-criterion` reemplaza la metodología de medias con
+`Instant::now()` por el framework estadístico **Criterion**:
+
+- **Mediana, percentiles e intervalos de confianza** (bootstrap)
+- **Detección de outliers** y de **regresiones** vs. una baseline
+- **Throughput** y tamaño de muestra adaptativo
+- **Informes HTML** con gráficos en `target/criterion/report/`
+
+### Grupos
+
+| Grupo | Mide |
+|-------|------|
+| `vm-hot` | VM caliente: misma instancia, `reset()` + `ejecutar()` por iteración |
+| `vm-cold` | VM fría: creación + carga + ejecución por iteración |
+| `compilar` | Pipeline de compilación (lexer → parser → bytecode) |
+
+Cada grupo compara las tres VMs (`original`, `jit`, `forjafast`) sobre
+`fib(30)` iterativo, bucle suma 10k, `fib(15)` recursivo y un condicional.
+
+### Ejecutar
+
+```bash
+# Suite completa
+cargo bench --bench bench-criterion
+
+# Solo un grupo
+cargo bench --bench bench-criterion -- vm-hot
+
+# Guardar baseline y detectar regresiones tras un cambio
+cargo bench --bench bench-criterion -- --save-baseline base
+cargo bench --bench bench-criterion -- --baseline base
+```
+
+> La verificación de resultados (output esperado por workload) corre una vez
+> al inicio, fuera de la medición, para no contaminar las muestras.
