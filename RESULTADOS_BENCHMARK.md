@@ -1,7 +1,7 @@
 # 📊 Resultados de Benchmark: Forja vs Rust vs Python
 
 > **Fecha:** 9 Julio 2026
-> **Sistema:** Windows 11, x86-64, rustc 1.85+, Forja v0.9.0, Python 3.12.10
+> **Sistema:** Windows 11, x86-64, rustc 1.85+, Forja v0.9.1, Python 3.12.10
 
 ---
 
