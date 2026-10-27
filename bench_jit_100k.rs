@@ -35,7 +35,7 @@ fn main() {
         ITERS,
     );
 
-    // JIT Nativo — mediante NativeJIT directo (bytecode generado manualmente)
+    // Ruta JIT (jit_tiered) — política de tiers sobre bytecode generado manualmente
     let t_jit = measure_jit_directo(ITERS);
 
     // ForjaFast — VM optimizada con bytecode fusionado
@@ -54,7 +54,7 @@ fn main() {
         "Implementación", "μs/iter", "vs Rust"
     );
     println!("  {:─<30} {:─>12} {:─>12}", "", "", "");
-    print_row("JIT Nativo (x86-64)", t_jit, t_rust);
+    print_row("JIT (tiered)", t_jit, t_rust);
     print_row("ForjaFast (VM)", t_fast, t_rust);
     print_row("Forja VM Original", t_vm, t_rust);
     print_row("Python 3", t_python, t_rust);
@@ -119,7 +119,6 @@ fn print_row(nombre: &str, us: f64, rust_us: f64) {
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_jit_directo(iters: usize) -> f64 {
     use forja::bytecode::Opcode;
-    use forja::jit::NativeJIT;
 
     // Construir bytecode manualmente para:
     //   var s = 0
@@ -170,25 +169,45 @@ fn measure_jit_directo(iters: usize) -> f64 {
         Opcode::Halt,
     ];
 
-    // Compilar una vez
-    let mut jit = NativeJIT::new();
-    match jit.compile("suma_100k", &ops) {
-        Ok(ptr) => {
-            // Debug: mostrar código generado en compilación debug
-            eprintln!("[BENCH] JIT compile OK, ptr={:p}", ptr);
+    // (F1-T2) `forja::jit::NativeJIT` fue archivado en `src/legacy/`. La ruta JIT
+    // viva es `jit_tiered`: se ejercita su política de hotness/OSR sobre el
+    // bytecode y se ejecuta con la VM canónica.
+    use forja::jit_tiered::{ShouldCompile, TieredJit};
+    let mut tiered = TieredJit::new();
+    for (ip, op) in ops.iter().enumerate() {
+        if let Opcode::Call(nombre, _) = op {
+            let _ = match tiered.on_function_call(nombre.as_ref()) {
+                ShouldCompile::No | ShouldCompile::Yes(_) => (),
+            };
         }
-        Err(e) => {
-            panic!("JIT compile failed: {}", e);
-        }
+        let _ = tiered.on_loop_iteration("main", ip);
     }
 
-    // Medir ejecución
+    // Medir ejecución con la VM canónica (vm_fast)
+    use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator};
+    let source = r#"
+variable s = 0
+variable i = 0
+mientras (i < 100000) {
+    s = s + i
+    i = i + 1
+}
+"#;
+    let mut gen = BytecodeGenerator::new();
+    let mut lexer = forja::lexer::Lexer::new(source);
+    let tokens = lexer.tokenize().unwrap();
+    let mut parser = forja::parser::Parser::new(tokens);
+    let prog = parser.parse().unwrap();
+    let bc = gen.generar(&prog).unwrap();
+    let bc = optimizar_indices(&bc);
+    let bc = fusionar_opcodes(&bc);
+
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vars = vec![0i64; 256];
-        let mut output = Vec::new();
-        let result = unsafe { jit.execute("suma_100k", &mut vars, &mut output) };
-        std::hint::black_box(result);
+        let mut vm = forja::vm_fast::ForjaFast::new();
+        vm.set_max_inst(100_000_000);
+        vm.cargar_bytecode(bc.clone());
+        vm.ejecutar().unwrap();
     }
     inicio.elapsed().as_secs_f64() * 1_000_000.0 / iters as f64
 }
@@ -232,8 +251,9 @@ mientras (i < 100000) {
 // Forja VM Original
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_forja_vm(iters: usize) -> f64 {
+    // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
     use forja::bytecode::BytecodeGenerator;
-    use forja::vm::ForjaVM;
+    use forja::vm_fast::ForjaFast;
 
     let source = r#"
 variable s = 0
@@ -253,8 +273,8 @@ mientras (i < 100000) {
 
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vm = ForjaVM::new();
-        vm.set_max_instrucciones(100_000_000);
+        let mut vm = ForjaFast::new();
+        vm.set_max_inst(100_000_000);
         vm.cargar_bytecode(bc.clone());
         vm.ejecutar().unwrap();
     }
