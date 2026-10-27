@@ -74,7 +74,8 @@ escribir(x)"#,
 
         println!("\n=== {} ===", name);
 
-        let mut vm_orig = forja::vm::ForjaVM::new();
+        // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
+        let mut vm_orig = forja::vm_fast::ForjaFast::new();
         vm_orig.cargar_bytecode(bc.clone());
         match vm_orig.ejecutar() {
             Ok(_) => println!("  Original VM: OK! output: {:?}", vm_orig.obtener_output()),
@@ -92,7 +93,7 @@ escribir(x)"#,
     // Ahora probar fib(30) sin optimizar_indices
     println!("\n=== fib(30) SIN optimizar_indices ===");
     let bc_unopt = bc_raw.clone();
-    let mut vm_orig2 = forja::vm::ForjaVM::new();
+    let mut vm_orig2 = forja::vm_fast::ForjaFast::new();
     vm_orig2.cargar_bytecode(bc_unopt);
     match vm_orig2.ejecutar() {
         Ok(_) => println!("  Original VM: OK! output: {:?}", vm_orig2.obtener_output()),
@@ -102,7 +103,7 @@ escribir(x)"#,
     // fib(30) solo con optimizar_indices (sin fusion)
     println!("\n=== fib(30) SIN fusion ===");
     let bc_idx_only = optimizar_indices(&bc_raw);
-    let mut vm_orig3 = forja::vm::ForjaVM::new();
+    let mut vm_orig3 = forja::vm_fast::ForjaFast::new();
     vm_orig3.cargar_bytecode(bc_idx_only);
     match vm_orig3.ejecutar() {
         Ok(_) => println!("  Original VM: OK! output: {:?}", vm_orig3.obtener_output()),
@@ -125,7 +126,7 @@ escribir(fib(15))
         gen.generar(&prog).unwrap()
     };
 
-    let mut vm_rec = forja::vm::ForjaVM::new();
+    let mut vm_rec = forja::vm_fast::ForjaFast::new();
     vm_rec.cargar_bytecode(bc_rec.clone());
     match vm_rec.ejecutar() {
         Ok(_) => println!(
@@ -136,7 +137,7 @@ escribir(fib(15))
     }
 
     let bc_rec_fused = fusionar_opcodes(&optimizar_indices(&bc_rec));
-    let mut vm_rec2 = forja::vm::ForjaVM::new();
+    let mut vm_rec2 = forja::vm_fast::ForjaFast::new();
     vm_rec2.cargar_bytecode(bc_rec_fused);
     match vm_rec2.ejecutar() {
         Ok(_) => println!(
