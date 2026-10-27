@@ -2,7 +2,7 @@
 // Ejecutar: cargo run --release --bin bench-completo
 //
 // Mide:
-//   Forja VM Original, VM JIT, ASM nativo (gcc -O2), Rust nativo
+//   Forja VM canónica (vm_fast), ruta JIT (jit_tiered), ASM nativo (gcc -O2), Rust nativo
 //   Python (CPython), Go (si está instalado)
 
 use std::process::Command;
@@ -112,7 +112,8 @@ fn forja_vm_bench(source: &str, iters: usize) -> f64 {
     let bc = gen.generar(&prog).unwrap();
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vm = forja::vm::ForjaVM::new();
+        // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
+        let mut vm = forja::vm_fast::ForjaFast::new();
         vm.cargar_bytecode(bc.clone());
         let _ = vm.ejecutar();
     }
@@ -120,20 +121,42 @@ fn forja_vm_bench(source: &str, iters: usize) -> f64 {
 }
 
 fn forja_vm_jit_bench(source: &str, iters: usize) -> f64 {
+    // (F1-T2) `vm_jit::ForjaDT` fue archivado en `src/legacy/`. La ruta JIT viva
+    // es `jit_tiered` (política de hotness/OSR) alimentada por la VM canónica.
     let mut gen = forja::bytecode::BytecodeGenerator::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
     let prog = parser.parse().unwrap();
     let bc = gen.generar(&prog).unwrap();
-    let jit_bc = forja::vm_jit::compilar_bytecode(&bc);
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vm = forja::vm_jit::ForjaDT::new();
-        vm.cargar_bytecode(jit_bc.clone());
+        tiered_hotness(&bc);
+        let mut vm = forja::vm_fast::ForjaFast::new();
+        vm.cargar_bytecode(bc.clone());
         let _ = vm.ejecutar();
     }
     inicio.elapsed().as_secs_f64() * 1_000_000.0 / iters as f64
+}
+
+/// (F1-T2) Ejercita la política de compilación de `jit_tiered` (hotness + OSR)
+/// sobre el bytecode dado. Reemplaza al antiguo `ForjaDT` archivado.
+fn tiered_hotness(bc: &[forja::bytecode::Opcode]) {
+    use forja::bytecode::Opcode;
+    use forja::jit_tiered::{ShouldCompile, TieredJit};
+    let mut tiered = TieredJit::new();
+    for (ip, op) in bc.iter().enumerate() {
+        match op {
+            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Call(nombre, _) => {
+                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                    ShouldCompile::No | ShouldCompile::Yes(_) => (),
+                };
+            }
+            _ => {}
+        }
+        let _ = tiered.on_loop_iteration("main", ip);
+    }
 }
 
 fn forja_asm_bench(source: &str, iters: usize) -> f64 {
