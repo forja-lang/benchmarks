@@ -173,8 +173,9 @@ fn measure_forja_fast(source: &str, iters: usize) -> f64 {
 }
 
 fn measure_forja_vm(source: &str, iters: usize) -> f64 {
+    // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
     use forja::bytecode::BytecodeGenerator;
-    use forja::vm::ForjaVM;
+    use forja::vm_fast::ForjaFast;
 
     let mut gen = BytecodeGenerator::new();
     let mut lexer = forja::lexer::Lexer::new(source);
@@ -185,8 +186,8 @@ fn measure_forja_vm(source: &str, iters: usize) -> f64 {
 
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vm = ForjaVM::new();
-        vm.set_max_instrucciones(100_000_000);
+        let mut vm = ForjaFast::new();
+        vm.set_max_inst(100_000_000);
         vm.cargar_bytecode(bc.clone());
         vm.ejecutar().unwrap();
     }
