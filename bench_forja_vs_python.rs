@@ -136,7 +136,8 @@ fn forja_vm_bench(_name: &str, source: &str, iters: usize) -> f64 {
 
     let inicio = Instant::now();
     for i in 0..iters {
-        let mut vm = forja::vm::ForjaVM::new();
+        // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
+        let mut vm = forja::vm_fast::ForjaFast::new();
         vm.cargar_bytecode(bc.clone());
         vm.ejecutar().unwrap();
         if i == 0 {
