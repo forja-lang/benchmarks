@@ -37,9 +37,9 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Through
 use forja::bytecode::{BytecodeGenerator, Opcode};
 use forja::lexer::Lexer;
 use forja::parser::Parser;
-use forja::vm::ForjaVM;
 use forja::vm_fast::ForjaFast;
-use forja::vm_jit::{compilar_bytecode, ForjaDT};
+// (F1-T2) `forja::vm_jit::{compilar_bytecode, ForjaDT}` fue archivado en
+// `src/legacy/`. La ruta JIT viva es `jit_tiered` (ver `tiered_hotness`).
 
 const MAX_INSTRUCCIONES: usize = 1_000_000_000;
 
@@ -71,6 +71,25 @@ fn compilar(source: &str) -> Vec<Opcode> {
 
 fn compilar_optimizado(source: &str) -> Vec<Opcode> {
     forja::bytecode::optimizar_indices(&compilar(source))
+}
+
+/// (F1-T2) Ejercita la política de compilación de `jit_tiered` (hotness + OSR)
+/// sobre el bytecode dado. Reemplaza al antiguo `ForjaDT` archivado.
+fn tiered_hotness(bc: &[Opcode]) {
+    use forja::jit_tiered::{ShouldCompile, TieredJit};
+    let mut tiered = TieredJit::new();
+    for (ip, op) in bc.iter().enumerate() {
+        match op {
+            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Call(nombre, _) => {
+                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                    ShouldCompile::No | ShouldCompile::Yes(_) => (),
+                };
+            }
+            _ => {}
+        }
+        let _ = tiered.on_loop_iteration("main", ip);
+    }
 }
 
 // ── Verificación ───────────────────────────────────────────────────────────────
@@ -107,12 +126,12 @@ fn bench_vm_hot(c: &mut Criterion) {
     for (nombre, src, elems) in CARGA {
         let bc = compilar_optimizado(src);
         let bc_raw = compilar(src);
-        let bc_dt = compilar_bytecode(&bc_raw);
         group.throughput(Throughput::Elements(elems));
 
+        // F1-B1: ForjaVM eliminada; la columna «original» mide ahora ForjaFast.
         group.bench_with_input(BenchmarkId::new("original", nombre), &bc, |b, bc| {
-            let mut vm = ForjaVM::new();
-            vm.set_max_instrucciones(MAX_INSTRUCCIONES);
+            let mut vm = ForjaFast::new();
+            vm.set_max_inst(MAX_INSTRUCCIONES);
             vm.cargar_bytecode(bc.to_vec());
             b.iter(|| {
                 vm.reset();
@@ -120,14 +139,15 @@ fn bench_vm_hot(c: &mut Criterion) {
             });
         });
 
-        group.bench_with_input(BenchmarkId::new("jit", nombre), &bc_dt, |b, bc_dt| {
-            let mut vm = ForjaDT::new();
-            vm.set_max_instrucciones(MAX_INSTRUCCIONES);
-            vm.cargar_bytecode(bc_dt.clone());
+        // (F1-T2) La columna «jit» ejercita la política de `jit_tiered` (hotness/OSR)
+        // y ejecuta con la VM canónica. `vm_jit::ForjaDT` fue archivado.
+        group.bench_with_input(BenchmarkId::new("jit", nombre), &bc_raw, |b, bc_raw| {
+            let mut vm = ForjaFast::new();
+            vm.set_max_inst(MAX_INSTRUCCIONES);
+            vm.cargar_bytecode(bc_raw.to_vec());
             b.iter(|| {
-                // reset() limpia call_names; recargamos el bytecode DT para
-                // preservarlos (mismo approach que bench_forjafast).
-                vm.cargar_bytecode(bc_dt.clone());
+                tiered_hotness(bc_raw);
+                vm.reset();
                 vm.ejecutar().unwrap();
             });
         });
@@ -159,19 +179,20 @@ fn bench_vm_cold(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::new("original", nombre), &bc, |b, bc| {
             b.iter(|| {
-                let mut vm = ForjaVM::new();
-                vm.set_max_instrucciones(MAX_INSTRUCCIONES);
+                let mut vm = ForjaFast::new();
+                vm.set_max_inst(MAX_INSTRUCCIONES);
                 vm.cargar_bytecode(bc.to_vec());
                 vm.ejecutar().unwrap();
             });
         });
 
+        // (F1-T2) Columna «jit» sobre la ruta viva `jit_tiered` + VM canónica.
         group.bench_with_input(BenchmarkId::new("jit", nombre), &bc_raw, |b, bc_raw| {
             b.iter(|| {
-                let bc_dt = compilar_bytecode(bc_raw);
-                let mut vm = ForjaDT::new();
-                vm.set_max_instrucciones(MAX_INSTRUCCIONES);
-                vm.cargar_bytecode(bc_dt);
+                tiered_hotness(bc_raw);
+                let mut vm = ForjaFast::new();
+                vm.set_max_inst(MAX_INSTRUCCIONES);
+                vm.cargar_bytecode(bc_raw.to_vec());
                 vm.ejecutar().unwrap();
             });
         });
@@ -202,7 +223,7 @@ fn bench_compilar(c: &mut Criterion) {
             BenchmarkId::new("pipeline-completa", nombre),
             &src,
             |b, src| {
-                b.iter(|| forja::compilar_pipeline(src).unwrap());
+                b.iter(|| forja::compilar_pipeline_completa(src).unwrap().0);
             },
         );
     }
