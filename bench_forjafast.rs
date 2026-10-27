@@ -5,9 +5,9 @@
 use forja::bytecode::{BytecodeGenerator, Opcode};
 use forja::lexer::Lexer;
 use forja::parser::Parser;
-use forja::vm::ForjaVM;
 use forja::vm_fast::ForjaFast;
-use forja::vm_jit::{compilar_bytecode, BytecodeDT, ForjaDT};
+// (F1-T2) `forja::vm_jit::{compilar_bytecode, BytecodeDT, ForjaDT}` fue archivado
+// en `src/legacy/`. La ruta JIT viva es `jit_tiered` (ver `tiered_hotness`).
 use std::time::Instant;
 
 // ── Configuración ─────────────────────────────────────────────────────────────
@@ -25,6 +25,25 @@ fn compilar(source: &str) -> Vec<Opcode> {
 fn compilar_optimizado(source: &str) -> Vec<Opcode> {
     let bc = compilar(source);
     forja::bytecode::optimizar_indices(&bc)
+}
+
+/// (F1-T2) Ejercita la política de compilación de `jit_tiered` (hotness + OSR)
+/// sobre el bytecode dado. Reemplaza al antiguo `ForjaDT` archivado.
+fn tiered_hotness(bc: &[Opcode]) {
+    use forja::jit_tiered::{ShouldCompile, TieredJit};
+    let mut tiered = TieredJit::new();
+    for (ip, op) in bc.iter().enumerate() {
+        match op {
+            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Call(nombre, _) => {
+                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                    ShouldCompile::No | ShouldCompile::Yes(_) => (),
+                };
+            }
+            _ => {}
+        }
+        let _ = tiered.on_loop_iteration("main", ip);
+    }
 }
 
 // ── Supresión de stdout ───────────────────────────────────────────────────────
@@ -95,9 +114,11 @@ fn with_silent_stdout<F: FnOnce() -> R, R>(f: F) -> R {
 
 // ── Mediciones específicas por VM ─────────────────────────────────────────────
 
+// F1-B1: la VM "original" (ForjaVM) fue eliminada en v0.9.0. Se conserva la
+// columna para no romper el informe, pero ahora mide la VM canónica ForjaFast.
 fn medir_cold_original(bc: &[Opcode]) -> f64 {
-    let mut vm = ForjaVM::new();
-    vm.set_max_instrucciones(1_000_000_000);
+    let mut vm = ForjaFast::new();
+    vm.set_max_inst(1_000_000_000);
     vm.cargar_bytecode(bc.to_vec());
     with_silent_stdout(|| {
         let inicio = Instant::now();
@@ -107,8 +128,8 @@ fn medir_cold_original(bc: &[Opcode]) -> f64 {
 }
 
 fn medir_hot_original(bc: &[Opcode]) -> f64 {
-    let mut vm = ForjaVM::new();
-    vm.set_max_instrucciones(1_000_000_000);
+    let mut vm = ForjaFast::new();
+    vm.set_max_inst(1_000_000_000);
     vm.cargar_bytecode(bc.to_vec());
     with_silent_stdout(|| {
         for _ in 0..WARMUP_ITERS {
@@ -125,10 +146,11 @@ fn medir_hot_original(bc: &[Opcode]) -> f64 {
 }
 
 fn medir_cold_jit(bc: &[Opcode]) -> f64 {
-    let bc_dt = compilar_bytecode(bc);
-    let mut vm = ForjaDT::new();
-    vm.set_max_instrucciones(1_000_000_000);
-    vm.cargar_bytecode(bc_dt);
+    // (F1-T2) `vm_jit::ForjaDT` archivado. Ruta JIT viva: `jit_tiered` + VM canónica.
+    tiered_hotness(bc);
+    let mut vm = ForjaFast::new();
+    vm.set_max_inst(1_000_000_000);
+    vm.cargar_bytecode(bc.to_vec());
     with_silent_stdout(|| {
         let inicio = Instant::now();
         vm.ejecutar().unwrap();
@@ -136,19 +158,20 @@ fn medir_cold_jit(bc: &[Opcode]) -> f64 {
     })
 }
 
-fn medir_hot_jit(_bc: &[Opcode], bc_dt_cache: &BytecodeDT) -> f64 {
-    let mut vm = ForjaDT::new();
-    vm.set_max_instrucciones(1_000_000_000);
-    vm.cargar_bytecode(bc_dt_cache.clone());
+fn medir_hot_jit(bc: &[Opcode]) -> f64 {
+    let mut vm = ForjaFast::new();
+    vm.set_max_inst(1_000_000_000);
+    vm.cargar_bytecode(bc.to_vec());
     with_silent_stdout(|| {
         for _ in 0..WARMUP_ITERS {
-            // JIT reset() limpia call_names; recargamos bytecode para preservarlos
-            vm.cargar_bytecode(bc_dt_cache.clone());
+            tiered_hotness(bc);
+            vm.reset();
             vm.ejecutar().unwrap();
         }
         let inicio = Instant::now();
         for _ in 0..HOT_ITERS {
-            vm.cargar_bytecode(bc_dt_cache.clone());
+            tiered_hotness(bc);
+            vm.reset();
             vm.ejecutar().unwrap();
         }
         inicio.elapsed().as_secs_f64() * 1_000_000.0 / HOT_ITERS as f64
@@ -353,8 +376,8 @@ fn main() {
         .collect();
     let bcs_raw: Vec<Vec<Opcode>> = tests.iter().map(|(_, src, _)| compilar(src)).collect();
 
-    // Pre-compilar bytecode JIT (usa raw, no optimizado — JIT no soporta %idx_N con funciones)
-    let bcs_jit: Vec<BytecodeDT> = bcs_raw.iter().map(|bc| compilar_bytecode(bc)).collect();
+    // (F1-T2) Ya no se pre-compila bytecode DT; la ruta JIT usa `jit_tiered`
+    // sobre el bytecode raw (no optimizado).
 
     // ── VERIFICAR resultados ──
     println!("  ⏳ Verificando resultados...");
@@ -404,7 +427,7 @@ fn main() {
         let cold_orig = medir_cold_original(&bcs[test_idx]);
         let hot_orig = medir_hot_original(&bcs[test_idx]);
         print_fila(
-            "ForjaVM (Original)",
+            "ForjaFast (=Original)",
             cold_orig,
             hot_orig,
             hot_orig,
@@ -414,8 +437,8 @@ fn main() {
 
         // JIT — usa bytecode raw (no optimizado) porque no soporta %idx_N con funciones
         let cold_jit = medir_cold_jit(&bcs_raw[test_idx]);
-        let hot_jit = medir_hot_jit(&bcs_raw[test_idx], &bcs_jit[test_idx]);
-        print_fila("ForjaDT (JIT)", cold_jit, hot_jit, hot_orig, rust_us, false);
+        let hot_jit = medir_hot_jit(&bcs_raw[test_idx]);
+        print_fila("JIT (tiered)", cold_jit, hot_jit, hot_orig, rust_us, false);
 
         // ForjaFast
         let cold_fast = medir_cold_fast(&bcs[test_idx]);
@@ -467,7 +490,7 @@ fn main() {
 
     for i in 0..tests.len() {
         res_orig.push(medir_hot_original(&bcs[i]));
-        res_jit.push(medir_hot_jit(&bcs_raw[i], &bcs_jit[i]));
+        res_jit.push(medir_hot_jit(&bcs_raw[i]));
         res_fast.push(medir_hot_fast(&bcs[i]));
     }
 
