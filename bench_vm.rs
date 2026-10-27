@@ -50,7 +50,9 @@ escribir(fibonacci(20))
 
     let inicio = Instant::now();
     for i in 0..iters {
-        let mut vm = forja::vm::ForjaVM::new();
+        // F1-B1: la VM original (ForjaVM) fue eliminada en v0.9.0; la VM
+        // canónica es ahora vm_fast::ForjaFast (ver src/lib.rs).
+        let mut vm = forja::vm_fast::ForjaFast::new();
         vm.cargar_bytecode(bytecode.clone());
         vm.ejecutar().unwrap();
         let out = vm.obtener_output().to_vec();
@@ -145,7 +147,7 @@ escribir(suma)
 
     let inicio = Instant::now();
     for i in 0..iters {
-        let mut vm = forja::vm::ForjaVM::new();
+        let mut vm = forja::vm_fast::ForjaFast::new();
         vm.cargar_bytecode(bytecode.clone());
         vm.ejecutar().unwrap();
         if i == 0 {
