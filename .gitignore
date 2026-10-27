@@ -1,8 +1,13 @@
-# ── Ejecutables ──
+# ── Ejecutables y artefactos de build (F0-T2) ──
 *.exe
 *.o
+*.obj
+*.lib
+*.rlib
+*.pdb
+*.s
+*.rcgu.o
 
-# ── Markdown: solo raíz o README ──
-*.md
-!/*.md
-!README.md
+# ── Markdown ──
+# F0-T1: ya no se ignora *.md globalmente. Los .md de benchmarks/
+# (README.md, RESULTADOS_BENCHMARK.md) se trackean a propósito.
