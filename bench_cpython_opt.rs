@@ -3,14 +3,14 @@
 // Optimizaciones medidas:
 //   1. Small Integer Cache [-5, 256]
 //   2. Fast Locals - acceso O(1) a variables locales
-//   3. Direct Threading - VM con bytecode compacto (ForjaDT)
+//   3. Ruta JIT - política de compilación tiered (jit_tiered)
 //   4. Intérprete Adaptativo (PEP 659) - especialización de opcodes
 //   5. Uops/Inlining - expansión de opcodes compuestos
 //
 // VMs comparadas:
-//   - ForjaVM   (original, línea base)
-//   - ForjaFast (vm_fast - SIC + Fast Locals + Stack Cache + PEP 659 + Uops)
-//   - ForjaDT   (vm_jit - Direct Threading + SIC)
+//   - VM canónica (vm_fast - SIC + Fast Locals + Stack Cache + PEP 659 + Uops)
+//   - Ruta JIT    (jit_tiered - política de tiers + ejecución canónica)
+//   (F1-T2) `vm_jit::ForjaDT` fue archivado en `src/legacy/`.
 //
 // USO: cargo run --release --bin bench-cpython-opt
 
@@ -31,8 +31,10 @@ fn medir_vm(source: &str, iters: usize) -> f64 {
     let bc = compilar_raw(source);
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vm = forja::vm::ForjaVM::new();
-        vm.set_max_instrucciones(200_000_000);
+        // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
+        // El límite de instrucciones en ForjaFast se fija con `set_max_inst`.
+        let mut vm = forja::vm_fast::ForjaFast::new();
+        vm.set_max_inst(200_000_000);
         vm.cargar_bytecode(bc.clone());
         vm.ejecutar().unwrap();
     }
@@ -40,16 +42,38 @@ fn medir_vm(source: &str, iters: usize) -> f64 {
 }
 
 fn medir_vm_dt(source: &str, iters: usize) -> f64 {
+    // (F1-T2) `vm_jit::ForjaDT` archivado en `src/legacy/`. Se mide la ruta JIT
+    // viva: política de `jit_tiered` + ejecución con la VM canónica.
     let bc = compilar_raw(source);
-    let dt_bc = forja::vm_jit::compilar_bytecode(&bc);
     let inicio = Instant::now();
     for _ in 0..iters {
-        let mut vm = forja::vm_jit::ForjaDT::new();
-        vm.set_max_instrucciones(200_000_000);
-        vm.cargar_bytecode(dt_bc.clone());
+        tiered_hotness(&bc);
+        let mut vm = forja::vm_fast::ForjaFast::new();
+        vm.set_max_inst(200_000_000);
+        vm.cargar_bytecode(bc.clone());
         vm.ejecutar().unwrap();
     }
     inicio.elapsed().as_secs_f64() * 1_000_000.0 / iters as f64
+}
+
+/// (F1-T2) Ejercita la política de compilación de `jit_tiered` (hotness + OSR)
+/// sobre el bytecode dado. Reemplaza al antiguo `ForjaDT` archivado.
+fn tiered_hotness(bc: &[forja::bytecode::Opcode]) {
+    use forja::bytecode::Opcode;
+    use forja::jit_tiered::{ShouldCompile, TieredJit};
+    let mut tiered = TieredJit::new();
+    for (ip, op) in bc.iter().enumerate() {
+        match op {
+            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Call(nombre, _) => {
+                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                    ShouldCompile::No | ShouldCompile::Yes(_) => (),
+                };
+            }
+            _ => {}
+        }
+        let _ = tiered.on_loop_iteration("main", ip);
+    }
 }
 
 fn medir_fast(source: &str, iters: usize) -> Result<f64, String> {
