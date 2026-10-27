@@ -1,11 +1,15 @@
-// Comparativa: VM original vs vm_jit (direct threading) vs ForjaFast
+// Comparativa: VM canónica (vm_fast) vs ruta JIT (jit_tiered) vs ForjaFast
 // cargo run --release --bin bench-vms
+//
+// (F1-T2) `vm_jit::ForjaDT` fue archivado en `src/legacy/`. El único JIT vivo es
+// `jit_tiered`, que aún no expone un ejecutor propio: se ejercita su política de
+// compilación (hotness/OSR) y se ejecuta con la VM canónica `vm_fast::ForjaFast`.
 
 use std::time::Instant;
 
 fn main() {
     println!("═══════════════════════════════════════════════════");
-    println!("  🔥 Forja VM: Original vs JIT (DT) vs ForjaFast");
+    println!("  🔥 Forja VM: Canónica vs JIT (tiered) vs ForjaFast");
     println!("  1000 iteraciones, SIN output (eval pura)");
     println!("═══════════════════════════════════════════════════");
     println!();
@@ -37,18 +41,22 @@ variable r = fib(30)
     println!("───────────────────────────────────────────────");
 
     let t1 = medir(iters, || {
-        let mut v = forja::vm::ForjaVM::new();
+        // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
+        let mut v = forja::vm_fast::ForjaFast::new();
         v.cargar_bytecode(bc.clone());
         v.ejecutar().unwrap();
     });
     let t3 = medir(iters, || {
-        let mut v = forja::vm_jit::ForjaDT::new();
-        v.cargar_bytecode(forja::vm_jit::compilar_bytecode(&bc));
+        // (F1-T2) Ruta JIT: se ejercita la política de `jit_tiered` sobre el
+        // bytecode y se ejecuta con la VM canónica.
+        ejercitar_tiered(&bc);
+        let mut v = forja::vm_fast::ForjaFast::new();
+        v.cargar_bytecode(bc.clone());
         v.ejecutar().unwrap();
     });
 
-    print_row("VM Original", t1, t1);
-    print_row("VM JIT (Direct Threading)", t3, t1);
+    print_row("VM Canónica", t1, t1);
+    print_row("VM JIT (tiered)", t3, t1);
 
     // ===== TEST 2: Bucle =====
     let src2 = "variable s = 0\nvariable i = 0\nmientras (i < 50000) { s = s + i\ni = i + 1 }";
@@ -60,18 +68,19 @@ variable r = fib(30)
     println!("───────────────────────────────────────────────");
 
     let t1 = medir(iters, || {
-        let mut v = forja::vm::ForjaVM::new();
+        let mut v = forja::vm_fast::ForjaFast::new();
         v.cargar_bytecode(bc2.clone());
         v.ejecutar().unwrap();
     });
     let t3 = medir(iters, || {
-        let mut v = forja::vm_jit::ForjaDT::new();
-        v.cargar_bytecode(forja::vm_jit::compilar_bytecode(&bc2));
+        ejercitar_tiered(&bc2);
+        let mut v = forja::vm_fast::ForjaFast::new();
+        v.cargar_bytecode(bc2.clone());
         v.ejecutar().unwrap();
     });
 
-    print_row("VM Original", t1, t1);
-    print_row("VM JIT (DT)", t3, t1);
+    print_row("VM Canónica", t1, t1);
+    print_row("VM JIT (tiered)", t3, t1);
 
     // ===== Python reference =====
     println!();
@@ -89,6 +98,27 @@ variable r = fib(30)
         "  Forja JIT bucle 50k vs Python: {:.1}x más rápido",
         3000.0 / t3
     );
+}
+
+/// (F1-T2) Ejercita la política de compilación de `jit_tiered` (hotness + OSR)
+/// sobre el bytecode dado. Reemplaza al antiguo `ForjaDT` archivado.
+fn ejercitar_tiered(bc: &[forja::bytecode::Opcode]) {
+    use forja::bytecode::Opcode;
+    use forja::jit_tiered::{ShouldCompile, TieredJit};
+
+    let mut tiered = TieredJit::new();
+    for (ip, op) in bc.iter().enumerate() {
+        match op {
+            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Call(nombre, _) => {
+                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                    ShouldCompile::No | ShouldCompile::Yes(_) => (),
+                };
+            }
+            _ => {}
+        }
+        let _ = tiered.on_loop_iteration("main", ip);
+    }
 }
 
 fn compilar(source: &str) -> Vec<forja::bytecode::Opcode> {
