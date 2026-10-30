@@ -109,8 +109,8 @@ fn ejercitar_tiered(bc: &[forja::bytecode::Opcode]) {
     let mut tiered = TieredJit::new();
     for (ip, op) in bc.iter().enumerate() {
         match op {
-            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
-            Opcode::Call(nombre, _) => {
+            Opcode::DefinirFuncion(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Llamar(nombre, _) => {
                 match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
@@ -122,7 +122,7 @@ fn ejercitar_tiered(bc: &[forja::bytecode::Opcode]) {
 }
 
 fn compilar(source: &str) -> Vec<forja::bytecode::Opcode> {
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
