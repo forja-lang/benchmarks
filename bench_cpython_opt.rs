@@ -4,8 +4,8 @@
 //   1. Small Integer Cache [-5, 256]
 //   2. Fast Locals - acceso O(1) a variables locales
 //   3. Ruta JIT - política de compilación tiered (jit_tiered)
-//   4. Intérprete Adaptativo (PEP 659) - especialización de opcodes
-//   5. Uops/Inlining - expansión de opcodes compuestos
+//   4. Intérprete Adaptativo (PEP 659) - especialización de codigos
+//   5. Uops/Inlining - expansión de codigos compuestos
 //
 // VMs comparadas:
 //   - VM canónica (vm_fast - SIC + Fast Locals + Stack Cache + PEP 659 + Uops)
@@ -19,7 +19,7 @@ use std::time::Instant;
 const ITERS: usize = 200;
 
 fn compilar_raw(source: &str) -> Vec<forja::bytecode::Opcode> {
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -64,8 +64,8 @@ fn tiered_hotness(bc: &[forja::bytecode::Opcode]) {
     let mut tiered = TieredJit::new();
     for (ip, op) in bc.iter().enumerate() {
         match op {
-            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
-            Opcode::Call(nombre, _) => {
+            Opcode::DefinirFuncion(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Llamar(nombre, _) => {
                 match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
@@ -82,7 +82,7 @@ fn medir_fast(source: &str, iters: usize) -> Result<f64, String> {
     let bc_raw = compilar_raw(source);
     let has_functions = bc_raw
         .iter()
-        .any(|op| matches!(op, forja::bytecode::Opcode::FunctionDef(_, _)));
+        .any(|op| matches!(op, forja::bytecode::Opcode::DefinirFuncion(_, _)));
     if has_functions {
         return Err("N/A (incompatible con funciones)".into());
     }
