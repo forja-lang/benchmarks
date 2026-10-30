@@ -127,7 +127,7 @@ fn mostrar(nombre: &str, us: f64) {
 
 fn forja_vm_bench(_name: &str, source: &str, iters: usize) -> f64 {
     // Compilar una vez
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
