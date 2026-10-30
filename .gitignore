@@ -14,3 +14,6 @@
 
 # ── Dashboard: lo genera el job bench-versiones del CI (versions_graph.py) ──
 dashboard/
+
+# Python (versions_graph.py)
+__pycache__/
