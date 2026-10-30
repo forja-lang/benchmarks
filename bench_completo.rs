@@ -104,7 +104,7 @@ fn print_row(nombre: &str, us: f64, python_us: f64) {
 // ============================================================
 
 fn forja_vm_bench(source: &str, iters: usize) -> f64 {
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -123,7 +123,7 @@ fn forja_vm_bench(source: &str, iters: usize) -> f64 {
 fn forja_vm_jit_bench(source: &str, iters: usize) -> f64 {
     // (F1-T2) `vm_jit::ForjaDT` fue archivado en `src/legacy/`. La ruta JIT viva
     // es `jit_tiered` (política de hotness/OSR) alimentada por la VM canónica.
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -147,8 +147,8 @@ fn tiered_hotness(bc: &[forja::bytecode::Opcode]) {
     let mut tiered = TieredJit::new();
     for (ip, op) in bc.iter().enumerate() {
         match op {
-            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
-            Opcode::Call(nombre, _) => {
+            Opcode::DefinirFuncion(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Llamar(nombre, _) => {
                 match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
