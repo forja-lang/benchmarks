@@ -41,7 +41,7 @@ escribir(fibonacci(20))
     println!("───────────────────────────────────────────────────");
 
     // Compilar una vez (fuera del timing)
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(codigo_fib);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -138,7 +138,7 @@ escribir(suma)
     println!("  TEST 3: bucle 10000 iters — Forja VM");
     println!("───────────────────────────────────────────────────");
 
-    let mut gen = forja::bytecode::BytecodeGenerator::new();
+    let mut gen = forja::bytecode::GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(codigo_bucle);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
