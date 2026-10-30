@@ -11,3 +11,6 @@
 # ── Markdown ──
 # F0-T1: ya no se ignora *.md globalmente. Los .md de benchmarks/
 # (README.md, RESULTADOS_BENCHMARK.md) se trackean a propósito.
+
+# ── Dashboard: lo genera el job bench-versiones del CI (versions_graph.py) ──
+dashboard/
