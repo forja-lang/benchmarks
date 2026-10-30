@@ -176,7 +176,7 @@ fn measure_jit_directo(iters: usize) -> f64 {
     let mut tiered = TieredJit::new();
     for (ip, op) in ops.iter().enumerate() {
         if let Opcode::Call(nombre, _) = op {
-            let _ = match tiered.on_function_call(nombre.as_ref()) {
+            match tiered.on_function_call(nombre.as_ref()) {
                 ShouldCompile::No | ShouldCompile::Yes(_) => (),
             };
         }

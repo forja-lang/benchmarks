@@ -58,7 +58,7 @@ fn main() {
 
     // ── COMPILAR todos los tests primero ──
     println!("⏳ Compilando bytecode optimizado...");
-    let bcs = vec![
+    let bcs = [
         compilar(FIB_FA),
         compilar(SUMA_FA),
         compilar(COND_FA),
@@ -78,7 +78,7 @@ fn main() {
     println!("\n⏳ Midiendo Forja ({} iteraciones)...", iters);
     let mut forja_times: Vec<f64> = Vec::new();
 
-    for (_i, bc) in bcs.iter().enumerate() {
+    for bc in bcs.iter() {
         // Calentar
         for _ in 0..10 {
             let mut vm = ForjaFast::new();
@@ -116,8 +116,8 @@ fn main() {
     println!("═══════════════════════════════════════════════════════");
     println!();
     println!(
-        "  {:<22} {:>14} {:>12} {:>6}  {}",
-        "TEST", "Forja VM (μs)", "Python (μs)", "Ratio", "Winner"
+        "  {:<22} {:>14} {:>12} {:>6}  Winner",
+        "TEST", "Forja VM (μs)", "Python (μs)", "Ratio"
     );
     println!("  ──────────────────────────────────────────────────────────────");
 

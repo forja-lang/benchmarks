@@ -36,7 +36,7 @@ fn tiered_hotness(bc: &[Opcode]) {
         match op {
             Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
             Opcode::Call(nombre, _) => {
-                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
             }

@@ -212,7 +212,7 @@ fn fibonacci_forja(n: i64) -> i64 {
         let temp = a + b;
         a = b;
         b = temp;
-        i = i + 1;
+        i += 1;
     }
     b
 }

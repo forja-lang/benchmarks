@@ -149,7 +149,7 @@ fn tiered_hotness(bc: &[forja::bytecode::Opcode]) {
         match op {
             Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
             Opcode::Call(nombre, _) => {
-                let _ = match tiered.on_function_call(nombre.as_ref()) {
+                match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
             }
@@ -179,7 +179,7 @@ fn forja_asm_bench(source: &str, iters: usize) -> f64 {
 
     let _ = std::fs::write(asm_path, &asm_code);
     let _ = Command::new("gcc")
-        .args(&["-O2", "-o", exe_path, asm_path])
+        .args(["-O2", "-o", exe_path, asm_path])
         .output();
 
     // Ejecutar binario N veces
@@ -309,7 +309,7 @@ func main() {{
     );
     let _ = std::fs::write("bench_go_test.go", &go_code);
     let build = Command::new("go")
-        .args(&["build", "-o", "bench_go_test.exe", "bench_go_test.go"])
+        .args(["build", "-o", "bench_go_test.exe", "bench_go_test.go"])
         .output();
     match build {
         Ok(out) if out.status.success() => {
