@@ -34,7 +34,7 @@
 //! ```
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use forja::bytecode::{BytecodeGenerator, Opcode};
+use forja::bytecode::{GeneradorBytecode, Opcode};
 use forja::lexer::Lexer;
 use forja::parser::Parser;
 use forja::vm_fast::ForjaFast;
@@ -63,7 +63,7 @@ const VERIFICACION: [(&str, &str, &str); 4] = [
 // ── Compilación ────────────────────────────────────────────────────────────────
 
 fn compilar(source: &str) -> Vec<Opcode> {
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let tokens = Lexer::new(source).tokenize().unwrap();
     let prog = Parser::new(tokens).parse().unwrap();
     gen.generar(&prog).unwrap()
@@ -80,8 +80,8 @@ fn tiered_hotness(bc: &[Opcode]) {
     let mut tiered = TieredJit::new();
     for (ip, op) in bc.iter().enumerate() {
         match op {
-            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
-            Opcode::Call(nombre, _) => {
+            Opcode::DefinirFuncion(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Llamar(nombre, _) => {
                 match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
