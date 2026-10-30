@@ -128,7 +128,7 @@ escribir(s)
     println!("    Rust        {t_rust2:.2} μs");
     println!();
     println!("═══ JIT Nativo ═══");
-    println!("  src/jit.rs:       Compilador x86-64 (20+ opcodes implementados)");
+    println!("  src/jit.rs:       Compilador x86-64 (20+ codigos implementados)");
     println!("  src/jit_engine.rs: Orquestador con fallback automático");
     println!("  Estado:           En depuración (SEGFAULT en generación de código)");
     println!("  Opcodes JIT:      Push/Add/Sub/Mul/Div/Comparaciones/Lógicas/Variables/Control");
@@ -150,10 +150,10 @@ fn print_row(nombre: &str, us: f64, rust_us: f64) {
 }
 
 fn measure_forja_fast(source: &str, iters: usize) -> f64 {
-    use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator};
+    use forja::bytecode::{fusionar_opcodes, optimizar_indices, GeneradorBytecode};
     use forja::vm_fast::ForjaFast;
 
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -174,10 +174,10 @@ fn measure_forja_fast(source: &str, iters: usize) -> f64 {
 
 fn measure_forja_vm(source: &str, iters: usize) -> f64 {
     // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
-    use forja::bytecode::BytecodeGenerator;
+    use forja::bytecode::GeneradorBytecode;
     use forja::vm_fast::ForjaFast;
 
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
