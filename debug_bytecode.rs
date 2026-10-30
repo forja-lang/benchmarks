@@ -1,6 +1,6 @@
 // Debug: muestra el bytecode generado para fib(30)
 #![allow(unused_imports)]
-use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator, Opcode};
+use forja::bytecode::{fusionar_opcodes, optimizar_indices, GeneradorBytecode, Opcode};
 use forja::lexer::Lexer;
 use forja::parser::Parser;
 
@@ -22,7 +22,7 @@ funcion fib(n) {
 escribir(fib(30))
 "#;
     let bc_raw = {
-        let mut gen = BytecodeGenerator::new();
+        let mut gen = GeneradorBytecode::new();
         let tokens = Lexer::new(source).tokenize().unwrap();
         let prog = Parser::new(tokens).parse().unwrap();
         gen.generar(&prog).unwrap()
@@ -66,7 +66,7 @@ escribir(x)"#,
 
     for (name, src) in &simple_tests {
         let bc = fusionar_opcodes(&optimizar_indices(&{
-            let mut gen = BytecodeGenerator::new();
+            let mut gen = GeneradorBytecode::new();
             let tokens = Lexer::new(src).tokenize().unwrap();
             let prog = Parser::new(tokens).parse().unwrap();
             gen.generar(&prog).unwrap()
@@ -120,7 +120,7 @@ funcion fib(n) {
 escribir(fib(15))
 "#;
     let bc_rec = {
-        let mut gen = BytecodeGenerator::new();
+        let mut gen = GeneradorBytecode::new();
         let tokens = Lexer::new(src_rec).tokenize().unwrap();
         let prog = Parser::new(tokens).parse().unwrap();
         gen.generar(&prog).unwrap()
