@@ -11,7 +11,7 @@
 
 use forja::{
     bytecode,
-    bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator},
+    bytecode::{fusionar_opcodes, optimizar_indices, GeneradorBytecode},
     lexer, parser,
     vm_fast::ForjaFast,
 };
@@ -20,7 +20,7 @@ use std::time::Instant;
 
 fn compilar(source: &str) -> Vec<bytecode::Opcode> {
     let bc_raw = {
-        let mut gen = BytecodeGenerator::new();
+        let mut gen = GeneradorBytecode::new();
         let mut lexer = lexer::Lexer::new(source);
         let tokens = lexer.tokenize().unwrap();
         let mut parser = parser::Parser::new(tokens);
