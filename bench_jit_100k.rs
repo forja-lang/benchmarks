@@ -126,7 +126,7 @@ fn measure_jit_directo(iters: usize) -> f64 {
     //   while (i < 100000) { s = s + i; i = i + 1 }
     //   retornar s
     //
-    // Usando opcodes JITeables:
+    // Usando codigos JITeables:
     //   DeclareEnteroOp(0, 0)    // s = 0  (idx 0)
     //   DeclareEnteroOp(1, 0)    // i = 0  (idx 1)
     // Label(0):
@@ -148,25 +148,25 @@ fn measure_jit_directo(iters: usize) -> f64 {
     //   Halt
 
     let ops = vec![
-        Opcode::DeclareEnteroOp(0, 0),
-        Opcode::DeclareEnteroOp(1, 0),
-        Opcode::Label(0),
-        Opcode::LoadIdx(1),
+        Opcode::DeclararOperacionEntero(0, 0),
+        Opcode::DeclararOperacionEntero(1, 0),
+        Opcode::Etiqueta(0),
+        Opcode::CargarIndice(1),
         Opcode::PushEntero(100000),
         Opcode::Menor,
-        Opcode::JumpSiFalso(1),
-        Opcode::LoadIdx(0),
-        Opcode::LoadIdx(1),
-        Opcode::Add,
-        Opcode::StoreIdx(0),
-        Opcode::LoadIdx(1),
+        Opcode::SaltoSiFalso(1),
+        Opcode::CargarIndice(0),
+        Opcode::CargarIndice(1),
+        Opcode::Sumar,
+        Opcode::GuardarIndice(0),
+        Opcode::CargarIndice(1),
         Opcode::PushEntero(1),
-        Opcode::Add,
-        Opcode::StoreIdx(1),
-        Opcode::Jump(0),
-        Opcode::Label(1),
-        Opcode::LoadIdx(0),
-        Opcode::Halt,
+        Opcode::Sumar,
+        Opcode::GuardarIndice(1),
+        Opcode::Salto(0),
+        Opcode::Etiqueta(1),
+        Opcode::CargarIndice(0),
+        Opcode::Detener,
     ];
 
     // (F1-T2) `forja::jit::NativeJIT` fue archivado en `src/legacy/`. La ruta JIT
@@ -175,7 +175,7 @@ fn measure_jit_directo(iters: usize) -> f64 {
     use forja::jit_tiered::{ShouldCompile, TieredJit};
     let mut tiered = TieredJit::new();
     for (ip, op) in ops.iter().enumerate() {
-        if let Opcode::Call(nombre, _) = op {
+        if let Opcode::Llamar(nombre, _) = op {
             match tiered.on_function_call(nombre.as_ref()) {
                 ShouldCompile::No | ShouldCompile::Yes(_) => (),
             };
@@ -184,7 +184,7 @@ fn measure_jit_directo(iters: usize) -> f64 {
     }
 
     // Medir ejecución con la VM canónica (vm_fast)
-    use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator};
+    use forja::bytecode::{fusionar_opcodes, optimizar_indices, GeneradorBytecode};
     let source = r#"
 variable s = 0
 variable i = 0
@@ -193,7 +193,7 @@ mientras (i < 100000) {
     i = i + 1
 }
 "#;
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -216,7 +216,7 @@ mientras (i < 100000) {
 // ForjaFast (VM optimizada)
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_forja_fast(iters: usize) -> f64 {
-    use forja::bytecode::{fusionar_opcodes, optimizar_indices, BytecodeGenerator};
+    use forja::bytecode::{fusionar_opcodes, optimizar_indices, GeneradorBytecode};
     use forja::vm_fast::ForjaFast;
 
     let source = r#"
@@ -228,7 +228,7 @@ mientras (i < 100000) {
 }
 "#;
 
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
@@ -252,7 +252,7 @@ mientras (i < 100000) {
 // ────────────────────────────────────────────────────────────────────────────
 fn measure_forja_vm(iters: usize) -> f64 {
     // F1-B1: ForjaVM eliminada; se usa la VM canónica vm_fast::ForjaFast.
-    use forja::bytecode::BytecodeGenerator;
+    use forja::bytecode::GeneradorBytecode;
     use forja::vm_fast::ForjaFast;
 
     let source = r#"
@@ -264,7 +264,7 @@ mientras (i < 100000) {
 }
 "#;
 
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let mut lexer = forja::lexer::Lexer::new(source);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = forja::parser::Parser::new(tokens);
