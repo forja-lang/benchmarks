@@ -2,7 +2,7 @@
 // Mide cold-start (1ra ejecución) y hot-loop (reusando la misma VM)
 // Ejecutar: cargo run --release --bin bench-forjafast
 
-use forja::bytecode::{BytecodeGenerator, Opcode};
+use forja::bytecode::{GeneradorBytecode, Opcode};
 use forja::lexer::Lexer;
 use forja::parser::Parser;
 use forja::vm_fast::ForjaFast;
@@ -15,7 +15,7 @@ const WARMUP_ITERS: usize = 100;
 const HOT_ITERS: usize = 1000;
 
 fn compilar(source: &str) -> Vec<Opcode> {
-    let mut gen = BytecodeGenerator::new();
+    let mut gen = GeneradorBytecode::new();
     let tokens = Lexer::new(source).tokenize().unwrap();
     let prog = Parser::new(tokens).parse().unwrap();
     gen.generar(&prog).unwrap()
@@ -34,8 +34,8 @@ fn tiered_hotness(bc: &[Opcode]) {
     let mut tiered = TieredJit::new();
     for (ip, op) in bc.iter().enumerate() {
         match op {
-            Opcode::FunctionDef(nombre, _) => tiered.register_function(nombre.as_ref()),
-            Opcode::Call(nombre, _) => {
+            Opcode::DefinirFuncion(nombre, _) => tiered.register_function(nombre.as_ref()),
+            Opcode::Llamar(nombre, _) => {
                 match tiered.on_function_call(nombre.as_ref()) {
                     ShouldCompile::No | ShouldCompile::Yes(_) => (),
                 };
